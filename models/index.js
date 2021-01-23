@@ -1,5 +1,7 @@
 const Sequelize = require('sequelize');
-const db = new Sequelize('postgres://localhost:5432/wikistack');
+const db = new Sequelize('postgres://localhost:5432/wikistack', {
+  logging: false
+});
 
 const Page = db.define('page', {
   title: {
@@ -9,9 +11,6 @@ const Page = db.define('page', {
   slug: {
     type: Sequelize.STRING,
     allowNull: false,
-    validate: {
-      isUrl: true,
-    },
   },
   content: {
     type: Sequelize.TEXT,
@@ -22,6 +21,10 @@ const Page = db.define('page', {
     defaultValue: 'close',
   },
 });
+
+Page.beforeValidate((page) => {
+  page.slug = generateSlug(page.title);
+})
 
 const User = db.define('user', {
   name: {
@@ -37,8 +40,15 @@ const User = db.define('user', {
   },
 });
 
+Page.belongsTo(User, { as: 'author' });
+
+
 module.exports = {
   db,
   Page,
   User,
 };
+
+function generateSlug (title) {
+  return title.replace(/\s+/g, '_').replace(/\W/g, '');
+}
